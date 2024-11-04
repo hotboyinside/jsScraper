@@ -1,5 +1,5 @@
+const puppeteer = require('puppeteer');
 const http = require('node:http');
-const puppeteer = require('puppeteer'); // Изменен на require
 const fs = require('fs');
 
 const hostname = '127.0.0.1';
@@ -7,54 +7,68 @@ const port = 3000;
 
 const htmlContent = fs.readFileSync('index.html', 'utf8');
 
-const scraper = async (userUrl) => {
+const scraper = async (articleName) => {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
-  
   // Переходим на указанный URL
-  await page.goto(userUrl, { waitUntil: 'domcontentloaded' });
-  
+  await page.goto('https://habr.com', { waitUntil: 'domcontentloaded' });
   // Устанавливаем размер экрана
   await page.setViewport({ width: 1080, height: 1024 });
+  // Нажимаем на кнопку поиска по статьям в нав. меню
+  await page.click('.tm-header-user-menu__icon_search');
+  // дожидаемся рендера input
+  await page.waitForSelector('.tm-input-text-decorated__input');
+  // в новое поле добавляем тему на которую будем искать и нажимаем на иконку поиска
+  await page.type('.tm-input-text-decorated__input', articleName);
+  // Нажимаем на кнопку поиска по статьям
+  await page.waitForSelector('.tm-svg-icon__wrapper');
+  await page.click('.tm-svg-icon__wrapper');
 
-  const title = await page.title();
-  console.log('title: ', title);
+  let Alltitles = [];
+  let search = true;
   
-  // // Вводим текст в поле поиска
-  // await page.type('.devsite-search-field', 'automate beyond recorder');
-  
-  // // Ожидаем и кликаем по первой ссылке в результатах
-  // await page.waitForSelector('.devsite-result-item-link');
-  // await page.click('.devsite-result-item-link');
-  
-  // // Находим полный заголовок статьи по уникальному тексту
-  // await page.waitForSelector('text/Customize and automate');
-  // const fullTitle = await page.$eval('text/Customize and automate', el => el.textContent);
-  
-  // console.log('Заголовок статьи: "%s".', fullTitle);
-  
+  while (search) {
+    // ждем пока отобразится пагинация, значит названия статей уже появлились
+    await page.waitForSelector('.tm-pagination__pages');
+    const titles = await page.$$eval('.tm-title_h2', titles => {
+      return titles.map(title => title.textContent);
+    });
+
+    Alltitles.push(...titles);
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForSelector('[data-test-id="pagination-next-page"]');
+    const nextPageBtn = await page.$('[data-test-id="pagination-next-page"]');
+
+    const hasClass = await page.evaluate((el, className) => el.classList.contains(className), nextPageBtn, 'tm-pagination__navigation-link_active');
+
+    if (hasClass) {
+      nextPageBtn.click()
+    } else {
+      search = false;
+    }
+  }
+
   await browser.close();
-  return title
+  return Alltitles
 };
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/' && req.method === 'GET') {
     res.statusCode = 200;
-    // const response = 'Hello! It is main page of service. If you want to scrapy of page, you need to go in /scrape'
     res.setHeader('Content-Type', 'text/html');
     res.end(htmlContent)
   } else if (req.url === '/scrape' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => {
-      console.log(chunk);
       body += chunk.toString();
     });
     req.on('end', async () => {
       const searchParams = new URLSearchParams(body);
-      const url = searchParams.get('url');
+      const articleName = searchParams.get('articleName');
 
       try {
-        const result = await scraper(url);
+        const result = await scraper(articleName);
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/plain; charset=UTF-8');
         res.end(`Result: ${result}\n`);

@@ -9,10 +9,11 @@
 <body>
     <main>
         <container>
-            <h1>Welcome to the Scraping Service</h1>
+            <h1>Welcome to the Scraping Service in Habr.com</h1>
+            <p>This service searches the site habr.com and finds articles related to your topic</p>
             <form action="/scrape" method="POST">
-                <label for="url">Scrape for:</label>
-                <input type="text" id="url" name="url" placeholder="https://example.com" required>
+                <label for="articleName">Scrape for:</label>
+                <input type="text" id="articleName" name="articleName" placeholder="micro-frontend" required>
                 <button type="submit">Scrape</button>
             </form>
         </container>
