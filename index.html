@@ -11,12 +11,14 @@
         <container>
             <h1>Welcome to the Scraping Service in Habr.com</h1>
             <p>This service searches the site habr.com and finds articles related to your topic</p>
-            <form action="/scrape" method="POST">
-                <label for="articleName">Scrape for:</label>
+            <form id="scrapeForm" onsubmit="searchArticles(event)">
+                <label for="articleName">Enter your topic:</label>
                 <input type="text" id="articleName" name="articleName" placeholder="micro-frontend" required>
                 <button type="submit">Scrape</button>
             </form>
+            <ul id="results" class="results"></ul>
         </container>
     </main>
+    <script src="script.js"></script>
 </body>
 </html>

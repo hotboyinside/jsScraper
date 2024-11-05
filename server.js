@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const path = require('path');
 const http = require('node:http');
 const fs = require('fs');
 
@@ -13,7 +14,9 @@ const scraper = async (articleName) => {
   // Переходим на указанный URL
   await page.goto('https://habr.com', { waitUntil: 'domcontentloaded' });
   // Устанавливаем размер экрана
-  await page.setViewport({ width: 1080, height: 1024 });
+  await page.setViewport({ width: 1024, height: 768 });
+  // дожидаемся рендера иконки
+  await page.waitForSelector('.tm-header-user-menu__icon_search', { visible: true });
   // Нажимаем на кнопку поиска по статьям в нав. меню
   await page.click('.tm-header-user-menu__icon_search');
   // дожидаемся рендера input
@@ -71,12 +74,24 @@ const server = http.createServer(async (req, res) => {
         const result = await scraper(articleName);
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/plain; charset=UTF-8');
-        res.end(`Result: ${result}\n`);
+        res.end(JSON.stringify(result));
       } catch (error) {
         res.statusCode = 500;
         res.setHeader('Content-Type', 'text/plain');
         res.end('Error :(\n');
         console.error(error);
+      }
+    });
+  } else if (req.url === '/script.js' && req.method === 'GET') {
+    const scriptPath = path.join(__dirname, 'script.js');
+    fs.readFile(scriptPath, (err, data) => {
+      if (err) {
+        res.statusCode = 404;
+        res.end('Script not found');
+      } else {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/javascript');
+        res.end(data);
       }
     });
   } else {
