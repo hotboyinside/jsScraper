@@ -43,7 +43,7 @@ const scraper = async (articleName) => {
     await page.waitForSelector('[data-test-id="pagination-next-page"]');
     const nextPageBtn = await page.$('[data-test-id="pagination-next-page"]');
 
-    const hasClass = await page.evaluate((el, className) => el.classList.contains(className), nextPageBtn, 'tm-pagination__navigation-link_active');
+    const hasClass = await page.evaluate((el, className) => el?.classList.contains(className), nextPageBtn, 'tm-pagination__navigation-link_active');
 
     if (hasClass) {
       nextPageBtn.click()

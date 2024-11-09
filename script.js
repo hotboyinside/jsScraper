@@ -1,5 +1,7 @@
 const searchArticles = async (event) => {
     event.preventDefault()
+    const resultsList = document.getElementById('results');
+    resultsList.innerHTML = '';
 
     const articleName = document.getElementById('articleName').value;
     const response = await fetch('/scrape', {
@@ -19,7 +21,6 @@ const searchArticles = async (event) => {
 function displayResults(resultText) {
     const titlesListFromBackend = JSON.parse(resultText);
     const resultsList = document.getElementById('results');
-    resultsList.innerHTML = '';
   
     titlesListFromBackend.forEach(title => {
       const titleElement = document.createElement('li');
